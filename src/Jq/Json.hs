@@ -9,7 +9,7 @@ instance Show JSON where
 prettyPrint :: Int -> JSON -> String
 prettyPrint _ JNull = "null"
 prettyPrint _ (JNum jn) = printNum jn
-prettyPrint _ (JString str) = "\"" ++ str ++ "\""
+prettyPrint _ (JString str) = show str
 prettyPrint _ (JChar char) = "\"" ++ [char] ++ "\""
 prettyPrint _ (JBool b) = if b then "true" else "false"
 prettyPrint n (JArray arr) = if length arr > 0 then "[\n" ++ prettyPrintArray (n + 2) arr ++ "\n" ++ indentation n ++ "]" else "[]"
