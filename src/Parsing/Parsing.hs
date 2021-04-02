@@ -153,7 +153,8 @@ double = createDouble
             <*> ((char 'e' <|> char 'E') *> (integer <|> char '+' *> integer) <|> pure 0)
 
 createDouble :: Int -> Double -> Int -> Double
-createDouble b d e = (fromIntegral b + d) * (10 ^^ e)
+createDouble b d e| b >= 0 = (fromIntegral b + d) * (10 ^^ e)
+                  | otherwise = (fromIntegral b - d) * (10 ^^ e)
 
 
 -- Handling spacing
