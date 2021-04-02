@@ -5,7 +5,10 @@
 module Parsing.Parsing (module Parsing.Parsing, module Control.Applicative) where
 
 import Control.Applicative
+import Control.Monad
 import Data.Char
+import Numeric
+import Jq.Json
 
 -- Basic definitions
 
@@ -74,6 +77,50 @@ letter = sat isAlpha
 alphanum :: Parser Char
 alphanum = sat isAlphaNum
 
+
+
+escapeChar :: Parser Char
+escapeChar = do   _ <- char '\\'
+                  _ <- char '"'
+                  return '"'
+            <|>
+            do    _ <- char '\\'
+                  _ <- char '\\'
+                  return '\\'
+            <|>
+            do    _ <- char '\\'
+                  _ <- char 'n'
+                  return '\n'
+            <|>
+            do    _ <- char '\\'
+                  _ <- char 't'
+                  return '\t'
+            <|>
+            do    _ <- char '\\'
+                  _ <- char 'b'
+                  return '\b'
+            <|>
+            do    _ <- char '\\'
+                  _ <- char 'f'
+                  return '\f'
+            <|>
+            do    _ <- char '\\'
+                  _ <- char 'r'
+                  return '\r'
+            <|>
+            (string "\\u" *> escapeUnicode)
+
+escapeUnicode :: Parser Char
+escapeUnicode = chr . fst . head . readHex <$> replicateM 4 (sat isHexDigit)
+
+normalChar :: Parser Char
+normalChar = sat ((&&) <$> (/= '"') <*> (/= '\\'))
+
+stringLiteral :: Parser String
+stringLiteral = char '"' *> token (some (normalChar <|> escapeChar)) <* char '"'
+
+
+
 char :: Char -> Parser Char
 char x = sat (== x)
 
@@ -97,6 +144,17 @@ int = do char '-'
          n <- nat
          return (-n)
        <|> nat
+
+
+double :: Parser Double
+double = createDouble
+            <$> integer
+            <*> ((read <$> (('0' :) <$> ((:) <$> char '.' <*> (show <$> integer)))) <|> pure 0)
+            <*> ((char 'e' <|> char 'E') *> (integer <|> char '+' *> integer) <|> pure 0)
+
+createDouble :: Int -> Double -> Int -> Double
+createDouble b d e = (fromIntegral b + d) * (10 ^^ e)
+
 
 -- Handling spacing
 
